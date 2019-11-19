@@ -1,0 +1,5 @@
+munch
+six
+pyyaml
+github3.py
+cryptography
