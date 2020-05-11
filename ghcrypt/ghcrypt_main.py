@@ -70,7 +70,7 @@ def encrypt(parser, args):
                      " configuration file. Please provide one.")
     user_keys = []
     cfg = configparser.RawConfigParser()
-    with open(args.config, 'rb') as fh:
+    with open(args.config, 'r') as fh:
         cfg.readfp(fh, fh.name)
     sect = args.section
     sect_kind = cfg.get(sect, 'kind')
