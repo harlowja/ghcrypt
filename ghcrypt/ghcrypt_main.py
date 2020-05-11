@@ -103,7 +103,7 @@ def encrypt(parser, args):
             gh_user = cfg.get(sect, 'user')
         except configparser.NoOptionError:
             gh_user = raw_input("Your [%s] user: " % hub_base)
-        gh_pass = getpass.getpass("Your [%s] password: " % hub_base)
+        gh_pass = getpass.getpass("Your [%s] personal access token (or password): " % hub_base)
         if gh_enterprise:
             gh = e_login(username=gh_user, password=gh_pass, url=hub_base_url)
         else:
