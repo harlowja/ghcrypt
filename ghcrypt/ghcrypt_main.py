@@ -4,8 +4,6 @@ import functools
 import getpass
 import os
 
-from urlparse import urlparse
-
 from github3 import enterprise_login as e_login
 from github3 import login
 
@@ -14,6 +12,7 @@ import six
 import yaml
 
 from six.moves import configparser
+from six.moves.urllib.parse import urlparse
 
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
@@ -24,9 +23,9 @@ import cryptography.hazmat.backends.openssl.backend as openssl_backend
 
 def find_conf():
     maybes = [
-        os.path.join(os.getcwd(), 'cryptic.ini'),
-        os.path.expanduser("~/.cryptic.ini"),
-        "/etc/cryptic/cryptic.ini",
+        os.path.join(os.getcwd(), 'ghcrypt.ini'),
+        os.path.expanduser("~/.ghcrypt.ini"),
+        "/etc/ghcrypt/ghcrypt.ini",
     ]
     for f in maybes:
         if os.path.isfile(f):
@@ -170,7 +169,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--config",
-                        help="cryptic configuration"
+                        help="ghcrypt configuration"
                              " file (default=%(default)s)",
                         default=find_conf())
 
@@ -178,7 +177,7 @@ def main():
 
     parser_enc = subparsers.add_parser('encrypt', help='encrypt help')
     parser_enc.add_argument("-s", "--section",
-                            help=("section name in cryptic configuration"
+                            help=("section name in ghcrypt configuration"
                                   " defining source of"
                                   " public keys (default=%(default)s)"),
                             default="DEFAULT")
