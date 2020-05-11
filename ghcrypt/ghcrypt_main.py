@@ -20,6 +20,9 @@ from cryptography.hazmat.primitives import serialization
 
 import cryptography.hazmat.backends.openssl.backend as openssl_backend
 
+if six.PY3:
+    raw_input = input
+
 
 def find_conf():
     maybes = [
