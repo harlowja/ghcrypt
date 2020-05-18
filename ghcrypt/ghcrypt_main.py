@@ -20,8 +20,29 @@ from cryptography.hazmat.primitives import serialization
 
 import cryptography.hazmat.backends.openssl.backend as openssl_backend
 
+OK_KEY_TYPES = tuple(['ssh-rsa', 'ssh-dsa'])
+
 if six.PY3:
     raw_input = input
+
+
+def pick_key(keys, user):
+    while True:
+        print("Please select which public key of %s to use:" % user)
+        for i, k in enumerate(keys):
+            print("  %s. %s [%s]" % (i + 1, k.value, k.kind))
+        tmp_idx = raw_input("Which one do you want to use? ")
+        idx = tmp_idx.strip()
+        if not idx:
+            idx = -1
+        try:
+            idx = int(idx)
+        except ValueError:
+            idx = -1
+        if idx <= 0 or idx > len(keys):
+            print("Invalid selection, try again.")
+            continue
+        return idx - 1
 
 
 def find_conf():
@@ -103,17 +124,20 @@ def encrypt(parser, args):
             gh_user = cfg.get(sect, 'user')
         except configparser.NoOptionError:
             gh_user = raw_input("Your [%s] user: " % hub_base)
-        gh_pass = getpass.getpass("Your [%s] personal access token (or password): " % hub_base)
+        gh_pass = getpass.getpass("Your [%s] personal access"
+                                  " token (or password): " % hub_base)
         if gh_enterprise:
             gh = e_login(username=gh_user, password=gh_pass, url=hub_base_url)
         else:
             gh = login(username=gh_user, password=gh_pass)
         user = gh.user(args.user)
         if user:
-            for k in user.keys():
-                k = k.key
+            for uk in user.keys():
+                k = uk.key
                 if k:
                     kind, v = k.split()
+                    if kind not in OK_KEY_TYPES:
+                        continue
                     if kind == args.kind:
                         user_keys.append(munch.Munch({
                             'kind': kind,
@@ -126,15 +150,12 @@ def encrypt(parser, args):
         raise RuntimeError("Can not find any keys"
                            " for user '%s' with"
                            " kind '%s'" % (args.user, args.kind))
-    # TODO: maybe throw a multiple found error/exception?
-    user_key = user_keys[0]
-    if user_key.kind in ['ssh-rsa', 'ssh-dsa']:
-        encryptor_func = functools.partial(encrypt_ssh, user_key.kind)
+    print(user_keys)
+    if len(user_keys) > 1:
+        user_key = user_keys[pick_key(user_keys, args.user)]
     else:
-        encryptor_func = None
-    if not encryptor_func:
-        raise RuntimeError("No known encryptor function found for"
-                           " key with kind '%s'" % user_key.kind)
+        user_key = user_keys[0]
+    encryptor_func = functools.partial(encrypt_ssh, user_key.kind)
     blob = getpass.getpass("Value to encrypt: ")
     print("Copy and paste the following and"
           " send it (via some mechanism) to '%s':" % args.user)
