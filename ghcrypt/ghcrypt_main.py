@@ -150,7 +150,6 @@ def encrypt(parser, args):
         raise RuntimeError("Can not find any keys"
                            " for user '%s' with"
                            " kind '%s'" % (args.user, args.kind))
-    print(user_keys)
     if len(user_keys) > 1:
         user_key = user_keys[pick_key(user_keys, args.user)]
     else:
