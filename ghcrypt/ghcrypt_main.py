@@ -72,11 +72,12 @@ def find_default_private_key():
 
 def encrypt_ssh(prefix, blob, user_key):
     # See: https://cryptography.io/en/latest/hazmat/primitives/asymmetric/rsa/
-    real_user_key_value = user_key.value
-    if not real_user_key_value.startswith(prefix):
-        real_user_key_value = prefix + " " + real_user_key_value
-    pub_key = serialization.load_ssh_public_key(real_user_key_value,
-                                                openssl_backend)
+    user_key_value = user_key.value
+    if not user_key_value.startswith(prefix):
+        user_key_value = prefix + " " + user_key_value
+    if not isinstance(user_key_value, six.binary_type):
+        user_key_value = user_key_value.encode("utf8")
+    pub_key = serialization.load_ssh_public_key(user_key_value, openssl_backend)
     if not isinstance(blob, six.binary_type):
         blob = blob.encode("utf8")
     raw = pub_key.encrypt(
