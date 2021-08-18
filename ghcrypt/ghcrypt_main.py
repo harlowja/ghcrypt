@@ -21,6 +21,11 @@ from cryptography.hazmat.primitives import serialization
 import cryptography.hazmat.backends.openssl.backend as openssl_backend
 
 OK_KEY_TYPES = tuple(['ssh-rsa', 'ssh-dsa'])
+KEY_LOADERS = {
+    b"-----BEGIN OPENSSH PRIVATE KEY-----": serialization.load_ssh_private_key,
+    b"-----BEGIN RSA PRIVATE KEY-----": serialization.load_pem_private_key,
+}
+
 
 if six.PY3:
     raw_input = input
@@ -83,7 +88,10 @@ def encrypt_ssh(prefix, blob, user_key):
     raw = pub_key.encrypt(
         blob, padding.OAEP(mgf=padding.MGF1(algorithm=hashes.SHA256()),
                            algorithm=hashes.SHA256(), label=None))
-    return base64.b64encode(raw)
+    blob = base64.b64encode(raw)
+    if six.PY3:
+        blob = blob.decode('ascii')
+    return blob
 
 
 def encrypt(parser, args):
@@ -171,9 +179,16 @@ def decrypt(parser, args):
     else:
         password = None
     with open(args.private_key, "rb") as fh:
-        private_key = serialization.load_pem_private_key(
-            fh.read(), password=password,
-            backend=openssl_backend)
+        data_blob = fh.read()
+        key_loader = None
+        for h in KEY_LOADERS.keys():
+            if data_blob.startswith(h):
+                key_loader = KEY_LOADERS[h]
+                break
+        if key_loader is None:
+            raise RuntimeError("Unknown how to load key from '%s'" % (fh.name))
+        private_key = key_loader(data_blob, password=password,
+                                 backend=openssl_backend)
     blob = raw_input("Value to decrypt: ")
     if not isinstance(blob, six.binary_type):
         blob = blob.encode("utf8")
